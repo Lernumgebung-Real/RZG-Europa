@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Europa – Lernen in Portionen</title>
+<style>
+  :root{
+    --bg:#f6f4ef; --card:#ffffff; --ink:#1f2a37; --muted:#5b6675;
+    --accent:#2f5bd3; --accent-soft:#e6ecfb; --ok:#1f8a4c; --ok-soft:#e3f4ea;
+    --bad:#c0392b; --bad-soft:#fbe7e5; --warn:#b7791f; --warn-soft:#fdf3e1;
+    --radius:18px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+    font-size:19px;line-height:1.55}
+  .wrap{max-width:820px;margin:0 auto;padding:20px 16px 60px}
+  header{display:flex;align-items:center;gap:14px;justify-content:space-between;margin-bottom:14px}
+  h1{font-size:1.5rem;margin:0}
+  h2{font-size:1.45rem;margin:.2em 0 .5em}
+  .card{background:var(--card);border-radius:var(--radius);padding:26px 26px 22px;
+    box-shadow:0 2px 10px rgba(0,0,0,.06)}
+  .muted{color:var(--muted)}
+  .btn{appearance:none;border:0;border-radius:14px;padding:14px 22px;font-size:1.05rem;
+    font-weight:600;cursor:pointer;background:var(--accent);color:#fff;transition:transform .05s}
+  .btn:active{transform:scale(.98)}
+  .btn.secondary{background:var(--accent-soft);color:var(--accent)}
+  .btn.ghost{background:transparent;color:var(--muted);padding:8px 12px;font-weight:500}
+  .btn:disabled{opacity:.45;cursor:default}
+  .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .right{justify-content:flex-end}
+  .mt{margin-top:22px}
+
+  /* Fortschritt */
+  .progress{display:flex;gap:6px;margin:6px 0 18px}
+  .progress span{flex:1;height:10px;border-radius:6px;background:#dcd8cf}
+  .progress span.done{background:var(--ok)}
+  .progress span.now{background:var(--accent)}
+
+  /* Timer */
+  .timerbox{display:flex;align-items:center;gap:10px}
+  .ring{position:relative;width:86px;height:86px}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .t{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:1.15rem;font-variant-numeric:tabular-nums}
+  .ring.over .t{color:var(--warn)}
+  .tbtn{font-size:1.2rem;background:var(--accent-soft);color:var(--accent);border:0;border-radius:50%;
+    width:42px;height:42px;cursor:pointer}
+
+  /* Text */
+  .portion-head{display:flex;align-items:center;gap:12px}
+  .emoji{font-size:2.2rem}
+  .text p{margin:.7em 0}
+  .text b{background:#fff3c4;padding:0 3px;border-radius:4px}
+  .merke{background:var(--accent-soft);border-left:6px solid var(--accent);border-radius:12px;
+    padding:14px 18px;margin-top:18px}
+  .merke strong{display:block;margin-bottom:4px}
+
+  /* Quiz */
+  .opts{display:grid;gap:10px;margin-top:14px}
+  .opt{text-align:left;border:2px solid #d9dde4;background:#fff;border-radius:14px;padding:14px 18px;
+    font-size:1.05rem;cursor:pointer;color:var(--ink)}
+  .opt:hover:not(:disabled){border-color:var(--accent)}
+  .opt.right{border-color:var(--ok);background:var(--ok-soft)}
+  .opt.wrong{border-color:var(--bad);background:var(--bad-soft);text-decoration:line-through;opacity:.7}
+  .opt:disabled{cursor:default}
+  .feedback{margin-top:16px;padding:14px 18px;border-radius:12px}
+  .feedback.ok{background:var(--ok-soft)}
+  .feedback.no{background:var(--bad-soft)}
+  .qcount{font-size:.95rem;color:var(--muted)}
+
+  /* Banner */
+  .banner{background:var(--warn-soft);border:2px solid var(--warn);border-radius:14px;
+    padding:12px 16px;margin-bottom:16px;display:none}
+  .banner.show{display:block}
+
+  /* Pause */
+  .pause{text-align:center}
+  .bigtime{font-size:3.6rem;font-weight:800;font-variant-numeric:tabular-nums;margin:.1em 0}
+  .tip{font-size:1.25rem;background:var(--ok-soft);border-radius:14px;padding:16px;margin:16px 0}
+
+  /* Einstellungen */
+  .choice{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 16px}
+  .choice button{border:2px solid #d9dde4;background:#fff;border-radius:12px;padding:10px 16px;
+    font-size:1rem;cursor:pointer;color:var(--ink)}
+  .choice button.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700}
+  label.lbl{font-weight:600;display:block}
+
+  /* Ende */
+  .stars{font-size:2.4rem;letter-spacing:4px}
+  .mood{display:flex;gap:10px}
+  .mood button{font-size:2rem;border:2px solid #d9dde4;background:#fff;border-radius:14px;padding:6px 14px;cursor:pointer}
+  .mood button.sel{border-color:var(--accent);background:var(--accent-soft)}
+  textarea{width:100%;min-height:80px;font:inherit;font-size:1rem;padding:12px;border-radius:12px;border:2px solid #d9dde4}
+  .small{font-size:.9rem}
+  @media (max-width:560px){ body{font-size:17px} .card{padding:20px 16px} .ring{width:70px;height:70px} }
+  @media print{ .btn,.tbtn,header .timerbox{display:none} body{background:#fff} .card{box-shadow:none} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🌍 Europa</h1>
+    <div class="timerbox" id="timerbox" style="display:none">
+      <button class="tbtn" id="tPause" title="Timer anhalten">⏸</button>
+      <div class="ring" id="ring">
+        <svg width="100%" height="100%" viewBox="0 0 86 86">
+          <circle cx="43" cy="43" r="37" fill="none" stroke="#e3e0d8" stroke-width="9"/>
+          <circle id="ringArc" cx="43" cy="43" r="37" fill="none" stroke="#2f5bd3" stroke-width="9"
+            stroke-linecap="round" stroke-dasharray="232.5" stroke-dashoffset="0"/>
+        </svg>
+        <div class="t" id="tText">10:00</div>
+      </div>
+    </div>
+  </header>
+  <div class="progress" id="progress"></div>
+  <div class="banner" id="banner">⏰ <b>Die Zeit für diese Portion ist um.</b> Mach sie noch fertig. Danach gibt es eine Pause.</div>
+  <main id="app"></main>
+</div>
+
+<script>
+/* =========================================================
+   INHALT – hier können Lehrpersonen Texte und Fragen anpassen
+   ========================================================= */
+const PORTIONEN = [
+  {
+    titel:"Wo liegt Europa?", emoji:"🗺️",
+    text:[
+      "Europa ist ein <b>Kontinent</b>. Es ist der <b>zweitkleinste Kontinent</b> der Welt. Nur Australien ist kleiner.",
+      "Europa und Asien liegen auf derselben Landmasse. Zusammen nennt man sie <b>Eurasien</b>.",
+      "Zwischen Europa und Asien gibt es kein grosses Meer. Die Menschen haben die Grenze festgelegt. Sie verläuft vor allem entlang vom <b>Ural-Gebirge</b>, dem Uralfluss, dem Kaspischen Meer und dem Schwarzen Meer.",
+      "Im Westen liegt der <b>Atlantische Ozean</b>. Im Süden liegt das <b>Mittelmeer</b>. Im Norden liegt das <b>Nordpolarmeer</b>."
+    ],
+    merke:"Europa ist der zweitkleinste Kontinent. Im Osten ist das Ural-Gebirge die Grenze zu Asien.",
+    fragen:[
+      {f:"Welcher Kontinent ist kleiner als Europa?", o:["Afrika","Australien","Asien","Südamerika"], r:1,
+       e:"Australien ist der kleinste Kontinent. Europa ist der zweitkleinste."},
+      {f:"Welches Gebirge ist die Grenze zwischen Europa und Asien?", o:["die Alpen","die Pyrenäen","der Ural","die Karpaten"], r:2,
+       e:"Das Ural-Gebirge liegt in Russland und trennt Europa von Asien."},
+      {f:"Welches Meer liegt im Süden von Europa?", o:["die Nordsee","das Mittelmeer","die Ostsee","das Nordpolarmeer"], r:1,
+       e:"Das Mittelmeer liegt zwischen Europa und Afrika."}
+    ]
+  },
+  {
+    titel:"Die Regionen Europas", emoji:"🧭",
+    text:[
+      "In Europa gibt es <b>über 40 Länder</b>. Man teilt Europa in Regionen ein:",
+      "<b>Nordeuropa</b>: z. B. Norwegen, Schweden, Finnland<br><b>Westeuropa</b>: z. B. Frankreich, Grossbritannien, Irland<br><b>Mitteleuropa</b>: z. B. Schweiz, Deutschland, Österreich, Polen<br><b>Südeuropa</b>: z. B. Italien, Spanien, Portugal, Griechenland<br><b>Osteuropa</b>: z. B. Ukraine, Belarus, der Westen von Russland",
+      "Das grösste Land ist <b>Russland</b>. Ein Teil davon liegt in Asien.",
+      "Das kleinste Land ist die <b>Vatikanstadt</b> in Rom. Sie ist sogar das kleinste Land der Welt."
+    ],
+    merke:"Die Schweiz liegt in Mitteleuropa – mitten in Europa.",
+    fragen:[
+      {f:"In welcher Region liegt die Schweiz?", o:["Nordeuropa","Mitteleuropa","Südeuropa","Osteuropa"], r:1,
+       e:"Die Schweiz liegt in Mitteleuropa, zusammen mit Deutschland und Österreich."},
+      {f:"Welches Land gehört zu Nordeuropa?", o:["Spanien","Polen","Schweden","Italien"], r:2,
+       e:"Schweden liegt in Nordeuropa, wie Norwegen und Finnland."},
+      {f:"Welches ist das kleinste Land der Welt?", o:["Liechtenstein","Monaco","die Vatikanstadt","San Marino"], r:2,
+       e:"Die Vatikanstadt liegt mitten in Rom und ist das kleinste Land der Welt."}
+    ]
+  },
+  {
+    titel:"Gebirge, Flüsse und Meere", emoji:"⛰️",
+    text:[
+      "Die <b>Alpen</b> sind das höchste Gebirge in der Mitte von Europa. Sie liegen in acht Ländern, auch in der Schweiz. Der höchste Berg der Alpen ist der <b>Mont Blanc</b> (4806 m).",
+      "Weitere Gebirge sind die <b>Pyrenäen</b> zwischen Spanien und Frankreich und die <b>Karpaten</b> im Osten.",
+      "Der längste Fluss Europas ist die <b>Wolga</b> in Russland. Die <b>Donau</b> fliesst durch zehn Länder. Das ist Weltrekord!",
+      "Der <b>Rhein</b> entspringt in der Schweiz, in Graubünden. Er fliesst über den Rheinfall bis in die <b>Nordsee</b>."
+    ],
+    merke:"Alpen = höchstes Gebirge in der Mitte Europas. Wolga = längster Fluss. Der Rhein entspringt in der Schweiz.",
+    fragen:[
+      {f:"Wie heisst der höchste Berg der Alpen?", o:["das Matterhorn","der Mont Blanc","der Eiger","die Zugspitze"], r:1,
+       e:"Der Mont Blanc ist 4806 m hoch. Er liegt zwischen Frankreich und Italien."},
+      {f:"Welcher Fluss ist der längste in Europa?", o:["der Rhein","die Rhone","die Donau","die Wolga"], r:3,
+       e:"Die Wolga fliesst durch Russland und ist rund 3500 km lang."},
+      {f:"Richtig oder falsch: Der Rhein entspringt in der Schweiz.", o:["Richtig","Falsch"], r:0,
+       e:"Richtig! Der Rhein entspringt in Graubünden und fliesst bis in die Nordsee."}
+    ]
+  },
+  {
+    titel:"Das Klima in Europa", emoji:"🌦️",
+    text:[
+      "<b>Im Westen</b> ist das Meer nahe. Das Meer macht das Wetter mild: Die Winter sind nicht sehr kalt, die Sommer nicht sehr heiss. Es regnet oft. Eine warme Meeresströmung, der <b>Golfstrom</b>, macht es noch milder.",
+      "<b>Im Osten</b> ist das Meer weit weg. Die Winter sind sehr kalt und die Sommer heiss.",
+      "<b>Im Süden, am Mittelmeer,</b> sind die Sommer heiss und trocken. Die Winter sind mild und es regnet mehr.",
+      "<b>Im hohen Norden</b> sind die Winter lang und kalt. Die Sommer sind kurz."
+    ],
+    merke:"Nah am Meer = mild. Weit weg vom Meer = kalte Winter, heisse Sommer. Am Mittelmeer = heisse, trockene Sommer.",
+    fragen:[
+      {f:"Wo sind die Sommer heiss und trocken?", o:["in Norwegen","in Irland","am Mittelmeer","auf Island"], r:2,
+       e:"Am Mittelmeer, z. B. in Italien oder Griechenland, sind die Sommer heiss und trocken."},
+      {f:"Was macht das Klima in Westeuropa milder?", o:["der Golfstrom","die Alpen","der Ural","die Wolga"], r:0,
+       e:"Der Golfstrom ist eine warme Meeresströmung im Atlantik."},
+      {f:"Wie ist das Klima weit weg vom Meer, zum Beispiel in Osteuropa?", o:["immer mild","kalte Winter, heisse Sommer","immer heiss","jeden Tag Regen"], r:1,
+       e:"Ohne Meer in der Nähe werden die Winter sehr kalt und die Sommer heiss."}
+    ]
+  },
+  {
+    titel:"Die Schweiz und Europa", emoji:"🇨🇭",
+    text:[
+      "Die Schweiz hat fünf <b>Nachbarländer</b>: Deutschland, Frankreich, Italien, Österreich und Liechtenstein.",
+      "In der <b>Europäischen Union (EU)</b> arbeiten 27 Länder eng zusammen, zum Beispiel beim Handel. Viele EU-Länder bezahlen mit dem <b>Euro</b>.",
+      "Die Schweiz ist <b>nicht in der EU</b>. Sie hat aber viele Verträge mit der EU. Man nennt sie die <b>bilateralen Verträge</b>.",
+      "Die Schweiz ist beim <b>Schengen-Abkommen</b> dabei. Darum gibt es an der Grenze meistens keine Passkontrolle. In der Schweiz bezahlt man mit dem <b>Franken</b>."
+    ],
+    merke:"Die Schweiz ist nicht in der EU, arbeitet aber mit Verträgen eng mit ihr zusammen.",
+    fragen:[
+      {f:"Welches Land ist KEIN Nachbarland der Schweiz?", o:["Österreich","Liechtenstein","Spanien","Italien"], r:2,
+       e:"Spanien grenzt nicht an die Schweiz. Dazwischen liegt Frankreich."},
+      {f:"Richtig oder falsch: Die Schweiz ist Mitglied der EU.", o:["Richtig","Falsch"], r:1,
+       e:"Falsch. Die Schweiz ist nicht in der EU, hat aber viele Verträge mit ihr."},
+      {f:"Wie viele Länder sind in der EU?", o:["12","27","45","50"], r:1,
+       e:"Die EU hat 27 Mitgliedsländer."}
+    ]
+  }
+];
+
+const PAUSEN_TIPPS = [
+  "🧍 Steh auf und streck dich ganz gross.",
+  "💧 Trink ein Glas Wasser.",
+  "🪟 Schau 20 Sekunden aus dem Fenster in die Ferne.",
+  "🌬️ Atme 5-mal tief ein und langsam aus.",
+  "🤸 Mach 10 Hampelmänner oder Kniebeugen.",
+  "👐 Schüttle deine Hände und Arme locker aus."
+];
+
+/* =========================================================
+   ZUSTAND
+   ========================================================= */
+const S = {
+  portionMin: 8, pauseMin: 3, ton: true,
+  p: 0, q: 0, sterne: 0, versuche: 0,
+  restSek: 0, totalSek: 0, laeuft: false, ueberzogen: false, interval: null,
+  pauseInterval: null, mood: null
+};
+const app = document.getElementById('app');
+const $ = id => document.getElementById(id);
+
+/* ---------- Ton ---------- */
+let audioCtx = null;
+function signal(){
+  if(!S.ton) return;
+  try{
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    [0,0.35,0.7].forEach((t,i)=>{
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type='sine'; o.frequency.value=[660,784,988][i];
+      g.gain.setValueAtTime(0.0001, audioCtx.currentTime+t);
+      g.gain.exponentialRampToValueAtTime(0.25, audioCtx.currentTime+t+0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+t+0.3);
+      o.connect(g).connect(audioCtx.destination);
+      o.start(audioCtx.currentTime+t); o.stop(audioCtx.currentTime+t+0.32);
+    });
+  }catch(e){}
+}
+
+/* ---------- Vorlesen ---------- */
+function vorlesen(html){
+  if(!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  const tmp = document.createElement('div'); tmp.innerHTML = html.replace(/<br>/g,'. ');
+  const u = new SpeechSynthesisUtterance(tmp.textContent);
+  u.lang='de-DE'; u.rate=0.92;
+  speechSynthesis.speak(u);
+}
+function stopVorlesen(){ if('speechSynthesis' in window) speechSynthesis.cancel(); }
+
+/* ---------- Fortschritt ---------- */
+function zeigeFortschritt(){
+  const el = $('progress'); el.innerHTML='';
+  PORTIONEN.forEach((_,i)=>{
+    const s=document.createElement('span');
+    if(i<S.p) s.className='done'; else if(i===S.p && app.dataset.screen!=='start') s.className='now';
+    el.appendChild(s);
+  });
+}
+
+/* ---------- Timer ---------- */
+const UMFANG = 2*Math.PI*37;
+function fmt(sek){ const a=Math.abs(sek); return (sek<0?'+':'')+Math.floor(a/60)+':'+String(a%60).padStart(2,'0'); }
+function zeichneTimer(){
+  $('tText').textContent = fmt(S.restSek);
+  const anteil = Math.max(0,S.restSek)/S.totalSek;
+  $('ringArc').setAttribute('stroke-dashoffset', UMFANG*(1-anteil));
+  $('ringArc').setAttribute('stroke', S.restSek<=60 ? '#b7791f' : '#2f5bd3');
+  $('ring').classList.toggle('over', S.restSek<0);
+}
+function startePortionsTimer(){
+  S.totalSek = S.portionMin*60; S.restSek = S.totalSek; S.ueberzogen=false;
+  $('banner').classList.remove('show');
+  $('timerbox').style.display='flex';
+  S.laeuft=true; $('tPause').textContent='⏸';
+  clearInterval(S.interval);
+  S.interval = setInterval(()=>{
+    if(!S.laeuft) return;
+    S.restSek--;
+    if(S.restSek===0 && !S.ueberzogen){ S.ueberzogen=true; signal(); $('banner').classList.add('show'); }
+    zeichneTimer();
+  },1000);
+  zeichneTimer();
+}
+function stoppePortionsTimer(){ clearInterval(S.interval); $('timerbox').style.display='none'; $('banner').classList.remove('show'); }
+$('tPause').onclick = ()=>{ S.laeuft=!S.laeuft; $('tPause').textContent = S.laeuft?'⏸':'▶'; $('tPause').title = S.laeuft?'Timer anhalten':'Timer weiterlaufen lassen'; };
+
+/* =========================================================
+   SCREENS
+   ========================================================= */
+function screen(name, html){ app.dataset.screen=name; app.innerHTML=html; zeigeFortschritt(); window.scrollTo(0,0); }
+
+function startScreen(){
+  stoppePortionsTimer();
+  screen('start', `
+    <div class="card">
+      <h2>Willkommen! 👋</h2>
+      <p>Du lernst heute etwas über <b>Europa</b>. Der Stoff ist in <b>${PORTIONEN.length} kleine Portionen</b> aufgeteilt.</p>
+      <p>So geht's:</p>
+      <ol>
+        <li>Lies eine Portion. Du kannst sie dir auch vorlesen lassen. 🔊</li>
+        <li>Beantworte 3 Fragen dazu.</li>
+        <li>Mach eine kurze Pause.</li>
+      </ol>
+      <p class="muted">Oben rechts siehst du, wie viel Zeit du für eine Portion noch hast.</p>
+      <div class="mt">
+        <label class="lbl">⏱️ Zeit pro Portion</label>
+        <div class="choice" id="cPortion">
+          ${[5,8,10,12].map(m=>`<button data-v="${m}" class="${m===S.portionMin?'sel':''}">${m} Min.</button>`).join('')}
+        </div>
+        <label class="lbl">☕ Pause</label>
+        <div class="choice" id="cPause">
+          ${[2,3,5].map(m=>`<button data-v="${m}" class="${m===S.pauseMin?'sel':''}">${m} Min.</button>`).join('')}
+        </div>
+        <label class="lbl">🔔 Ton am Ende der Zeit</label>
+        <div class="choice" id="cTon">
+          <button data-v="1" class="${S.ton?'sel':''}">an</button>
+          <button data-v="0" class="${!S.ton?'sel':''}">aus</button>
+        </div>
+      </div>
+      <div class="row right mt"><button class="btn" id="go">Los geht's →</button></div>
+    </div>`);
+  const wahl=(id,fn)=>$(id).querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    $(id).querySelectorAll('button').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); fn(b.dataset.v);
+  });
+  wahl('cPortion',v=>S.portionMin=+v); wahl('cPause',v=>S.pauseMin=+v); wahl('cTon',v=>S.ton=v==='1');
+  $('go').onclick=()=>{ S.p=0; S.sterne=0; S.versuche=0; S.mood=null; signalVorbereiten(); leseScreen(); };
+}
+function signalVorbereiten(){ // Browser erlauben Ton erst nach einem Klick
+  try{ audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)(); audioCtx.resume(); }catch(e){}
+}
+
+function leseScreen(){
+  const P = PORTIONEN[S.p];
+  startePortionsTimer();
+  screen('lesen', `
+    <div class="card">
+      <div class="muted small">Portion ${S.p+1} von ${PORTIONEN.length}</div>
+      <div class="portion-head"><span class="emoji">${P.emoji}</span><h2>${P.titel}</h2></div>
+      <div class="text">${P.text.map(t=>`<p>${t}</p>`).join('')}</div>
+      <div class="merke"><strong>💡 Merke</strong>${P.merke}</div>
+      <div class="row mt" style="justify-content:space-between">
+        <button class="btn secondary" id="vor">🔊 Vorlesen</button>
+        <button class="btn" id="weiter">Ich habe alles gelesen → Fragen</button>
+      </div>
+    </div>`);
+  $('vor').onclick=()=>vorlesen(P.text.join(' ')+' Merke: '+P.merke);
+  $('weiter').onclick=()=>{ stopVorlesen(); S.q=0; frageScreen(); };
+}
+
+function frageScreen(){
+  const P = PORTIONEN[S.p], F = P.fragen[S.q];
+  let fehler = 0;
+  screen('quiz', `
+    <div class="card">
+      <div class="qcount">${P.emoji} ${P.titel} · Frage ${S.q+1} von ${P.fragen.length}</div>
+      <h2 style="margin-top:.4em">${F.f}</h2>
+      <div class="opts">${F.o.map((o,i)=>`<button class="opt" data-i="${i}">${o}</button>`).join('')}</div>
+      <div id="fb"></div>
+      <div class="row" style="justify-content:space-between;margin-top:18px">
+        <button class="btn ghost" id="zurueck">← Text nochmals lesen</button>
+        <button class="btn" id="next" style="display:none">Weiter →</button>
+      </div>
+    </div>`);
+  $('zurueck').onclick=()=>{
+    const P2=PORTIONEN[S.p];
+    app.dataset.screen='lesen';
+    app.innerHTML = `<div class="card">
+      <div class="portion-head"><span class="emoji">${P2.emoji}</span><h2>${P2.titel}</h2></div>
+      <div class="text">${P2.text.map(t=>`<p>${t}</p>`).join('')}</div>
+      <div class="merke"><strong>💡 Merke</strong>${P2.merke}</div>
+      <div class="row right mt"><button class="btn" id="back">Zurück zur Frage →</button></div></div>`;
+    $('back').onclick=frageScreen;
+  };
+  app.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+    const i=+b.dataset.i;
+    if(i===F.r){
+      b.classList.add('right');
+      app.querySelectorAll('.opt').forEach(x=>x.disabled=true);
+      if(fehler===0) S.sterne++;
+      S.versuche++;
+      $('fb').innerHTML=`<div class="feedback ok"><b>${fehler===0?'✅ Super, richtig!':'✅ Jetzt stimmt es!'}</b><br>${F.e}</div>`;
+      $('next').style.display='inline-block'; $('next').focus();
+    } else {
+      fehler++; b.classList.add('wrong'); b.disabled=true;
+      $('fb').innerHTML=`<div class="feedback no"><b>Noch nicht ganz.</b> Versuch es nochmals – du schaffst das! 💪</div>`;
+    }
+  });
+  $('next').onclick=()=>{
+    if(S.q < P.fragen.length-1){ S.q++; frageScreen(); }
+    else { stoppePortionsTimer(); S.p++; if(S.p<PORTIONEN.length) pauseScreen(); else endScreen(); }
+  };
+}
+
+function pauseScreen(){
+  let rest = S.pauseMin*60;
+  const tipp = PAUSEN_TIPPS[Math.floor(Math.random()*PAUSEN_TIPPS.length)];
+  screen('pause', `
+    <div class="card pause">
+      <h2>🎉 Portion ${S.p} geschafft!</h2>
+      <p>Jetzt ist <b>Pause</b>. Dein Kopf darf sich kurz erholen.</p>
+      <div class="bigtime" id="pt">${fmt(rest)}</div>
+      <div class="tip">${tipp}</div>
+      <p class="muted" id="pinfo">Als Nächstes: ${PORTIONEN[S.p].emoji} ${PORTIONEN[S.p].titel}</p>
+      <div class="row" style="justify-content:center">
+        <button class="btn secondary" id="skip">Ich bin bereit – weiter</button>
+      </div>
+    </div>`);
+  clearInterval(S.pauseInterval);
+  S.pauseInterval = setInterval(()=>{
+    rest--; $('pt').textContent = fmt(Math.max(0,rest));
+    if(rest<=0){
+      clearInterval(S.pauseInterval); signal();
+      $('pt').textContent='0:00';
+      $('pinfo').innerHTML='<b>Die Pause ist vorbei.</b> Weiter geht\'s!';
+      $('skip').className='btn'; $('skip').textContent='Weiter zur nächsten Portion →';
+    }
+  },1000);
+  $('skip').onclick=()=>{ clearInterval(S.pauseInterval); leseScreen(); };
+}
+
+function endScreen(){
+  const max = PORTIONEN.reduce((a,P)=>a+P.fragen.length,0);
+  const anteil = S.sterne/max;
+  const anzahl = anteil>=0.9?3:anteil>=0.6?2:1;
+  screen('ende', `
+    <div class="card">
+      <h2>🏁 Du hast alle Portionen geschafft!</h2>
+      <div class="stars">${'⭐'.repeat(anzahl)}${'☆'.repeat(3-anzahl)}</div>
+      <p><b>${S.sterne} von ${max}</b> Fragen hast du beim ersten Versuch richtig beantwortet.</p>
+      <hr style="border:0;border-top:1px solid #e6e2d9;margin:22px 0">
+      <h2 style="font-size:1.2rem">Kurz nachdenken 🤔</h2>
+      <label class="lbl">Wie ist es dir heute gegangen?</label>
+      <div class="mood" id="mood" style="margin:8px 0 18px">
+        <button data-v="gut">😀</button><button data-v="ok">😐</button><button data-v="schwer">😣</button>
+      </div>
+      <label class="lbl" for="r1">Was war für dich schwierig?</label>
+      <textarea id="r1" placeholder="z. B. Die Regionen von Europa …"></textarea>
+      <label class="lbl mt" for="r2">Was willst du dir merken? (1 Satz)</label>
+      <textarea id="r2" placeholder="z. B. Der Rhein entspringt in der Schweiz."></textarea>
+      <p class="muted small">Deine Antworten werden nirgends gespeichert. Zeig sie deiner Lehrperson oder drucke die Seite aus.</p>
+      <div class="row" style="justify-content:space-between">
+        <button class="btn secondary" id="druck">🖨️ Drucken</button>
+        <button class="btn" id="neu">Nochmals von vorne</button>
+      </div>
+    </div>`);
+  $('mood').querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    $('mood').querySelectorAll('button').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); S.mood=b.dataset.v;
+  });
+  $('druck').onclick=()=>window.print();
+  $('neu').onclick=startScreen;
+}
+
+startScreen();
+</script>
+</body>
+</html>
